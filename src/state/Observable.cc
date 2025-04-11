@@ -106,7 +106,7 @@ Observable::Observable(Teuchos::ParameterList& plist)
   // function modifies the values
   if (plist.isSublist("modifier")) {
     FunctionFactory fac;
-    modifier_ = fac.Create(plist.sublist("modifier"));
+    modifier_ = Teuchos::rcp(fac.Create(plist.sublist("modifier")));
 
     // convert the list to a string for printing in the file, so there is some
     // hope of tracibility
@@ -207,8 +207,8 @@ Observable::Setup(const Teuchos::Ptr<State>& S)
 
   // try to set requirements on the field, if they are not already set
   if (!S->HasRecord(variable_, tag_)) {
-    // require the field
-    auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, tag_);
+    // require the field, aliases are ok here
+    auto& cvs = S->Require<CompositeVector, CompositeVectorSpace>(variable_, tag_, "", true);
 
     // we have to set the mesh now -- assume it is provided by the domain
     cvs.SetMesh(mesh);

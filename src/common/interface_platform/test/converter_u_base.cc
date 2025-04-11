@@ -114,13 +114,18 @@ TEST(CONVERTER_BASE)
 
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int MyPID = comm.MyPID();
-  if (MyPID == 0) std::cout << "Test: convert transport test" << std::endl;
 
   // read parameter list
   for (int i = 1; i < 11; i++) {
     std::stringstream xmlFileName, id;
     id << std::setw(2) << std::setfill('0') << i;
     xmlFileName << "test/converter_u_test" << id.str() << ".xml";
+
+    if (MyPID == 0)
+      std::cout << std::endl
+                << std::endl
+                << "Test " << xmlFileName.str() << ": convert xml" << std::endl
+                << "---------------------------------------------" << std::endl;
 
     Amanzi::AmanziInput::InputConverterU converter(xmlFileName.str());
     Teuchos::ParameterList new_xml;
@@ -136,28 +141,33 @@ TEST(CONVERTER_BASE)
       xmlfile.open(ss.str().c_str());
       xmlfile << XMLobj;
 
-      std::cout << "Successful translation. Validating the result...\n\n";
-
       // development
       Teuchos::RCP<Teuchos::ParameterList> old_xml;
       xmlFileName.str("");
       xmlFileName << "test/converter_u_validate" << id.str() << ".xml";
+
+      std::cout << std::endl
+                << "Successful translation. Validating the result..." << std::endl
+                << "    gold file: " << xmlFileName.str() << std::endl
+                << "    native file: " << ss.str() << std::endl << std::endl;
+
       old_xml = Teuchos::getParametersFromXmlFile(xmlFileName.str());
       new_xml.validateParameters(*old_xml);
       old_xml->validateParameters(new_xml);
-      // new_xml.validateParametersAndSetDefaults(*old_xml);
-      // old_xml->validateParametersAndSetDefaults(new_xml);
 
       // data validation
       std::string name;
       bool flag = ComparePLists(new_xml, *old_xml, name);
       if (!flag) {
-        std::cout << "Test:" << i << ", error at \"" << name << "\".\n";
+        std::cout << "Test:" << i << ", error at \"" << name << "\"." << std::endl;
         CHECK(false);
         break;
+      } else {
+        std::cout << "Success" << std::endl;
       }
     } catch (std::exception& e) {
-      std::cout << e.what() << std::endl;
+      std::cout << "Test:" << i << " threw exception:" << std::endl;
+      std::cout << "  \"" << e.what() << "\"" << std::endl;
       CHECK(false);
       break;
     }
